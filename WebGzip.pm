@@ -1,5 +1,5 @@
 package CGI::WebGzip;
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 use strict;
 
 # Compression level.
@@ -209,6 +209,7 @@ sub stopCapture {
   return undef if !$capture;
   my $obj = tied *STDOUT;
   my $data = join "", @$obj;
+  $obj = $capture = undef;
   untie(*STDOUT);
   return $data;
 }
@@ -216,9 +217,29 @@ sub stopCapture {
 # Package to tie STOUT. Captures all the output.
 package CGI::WebGzip::Tie;
 sub TIEHANDLE  { return bless [], $_[0] } 
-sub WRITE      { my $th = shift; push @$th, @_; }
-sub PRINT      { my $th = shift; push @$th, @_; }
-sub PRINTF     { my $th = shift; push @$th, sprintf @_; }
+sub PRINT      { 
+  my $th = shift; 
+  push @$th, map { 
+    if (!defined $_) {
+      eval { require Carp } and Carp::carp("Use of uninitialized value in print"); 
+      ""
+    } else {
+      $_
+    }
+  } @_;
+}
+sub PRINTF     { 
+  my $th = shift; 
+  push @$th, sprintf map { 
+    if (!defined $_) {
+      eval { require Carp } and Carp::carp("Use of uninitialized value in printf"); 
+      ""
+    } else {
+      $_
+    }
+  } @_;
+}
+sub WRITE      { goto &PRINT; }
 sub CLOSE      { CGI::WebGzip::flush() }
 sub BINMODE    { }
 
