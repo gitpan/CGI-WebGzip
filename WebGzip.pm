@@ -1,5 +1,5 @@
 package CGI::WebGzip;
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 use strict;
 
 # Compression level.
@@ -207,7 +207,8 @@ sub startCapture {
 # Finishes STDOUT capturing.
 sub stopCapture {
 	return undef if !$capture;
-	my $data = join "", @{tied *STDOUT};
+	my $obj = tied *STDOUT;
+	my $data = join "", @$obj;
 	untie(*STDOUT);
 	return $data;
 }
@@ -215,9 +216,9 @@ sub stopCapture {
 # Package to tie STOUT. Captures all the output.
 package CGI::WebGzip::Tie;
 sub TIEHANDLE  { return bless [], $_[0] } 
-sub WRITE      { push @{$_[0]}, @_; }
-sub PRINT      { push @{$_[0]}, @_; }
-sub PRINTF     { push @{$_[0]}, sprintf @_; }
+sub WRITE      { my $th = shift; push @$th, @_; }
+sub PRINT      { my $th = shift; push @$th, @_; }
+sub PRINTF     { my $th = shift; push @$th, sprintf @_; }
 sub CLOSE      { CGI::WebGzip::flush() }
 sub BINMODE    { }
 
@@ -231,13 +232,13 @@ CGI::WebGzip - Perl extension for GZipping script output
 
 =head1 SYNOPSIS
 
-  # usual code working with STDOUT:
+  # Usual code working with STDOUT:
   use CGI::WebGzip;
   print "Content-type: text/html\n\n";
   print "Hello, world!";
 
 
-  # lesser compression (by default 9, now - 5)
+  # Lesser compression (by default 9, now - 5)
   use CGI::WebGzip(5);
 
 
