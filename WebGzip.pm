@@ -18,39 +18,39 @@ my $callback = undef;
 # Usage:
 #   use CGI::WebGzip(level);
 sub import {
-	setLevel($_[1]);
-	if (!defined getAbility()) {
-		startCapture();
-	}
+  setLevel($_[1]);
+  if (!defined getAbility()) {
+    startCapture();
+  }
 }
 
 # Finish code.
 END {
-	flush();
+  flush();
 }
 
 
 # void flush()
 # Flushes the compressed buffer immediately and releases STDOUT capture.
 sub flush {
-	#CGI::WebOut::_Debug("Finished %s, %s, %s", __PACKAGE__, $capture->line_pointer, tied(*STDOUT));
-	my $data = stopCapture(); return if !defined $data;
-	my ($headers, $body) = split /\r?\n\r?\n/, $data, 2;
-	
-	# Run compression.
-	my ($newBody, $newHeaders, $stat) = ob_gzhandler($body, $headers);
-	$status = $stat;
+  #CGI::WebOut::_Debug("Finished %s, %s, %s", __PACKAGE__, $capture->line_pointer, tied(*STDOUT));
+  my $data = stopCapture(); return if !defined $data;
+  my ($headers, $body) = split /\r?\n\r?\n/, $data, 2;
+  
+  # Run compression.
+  my ($newBody, $newHeaders, $stat) = ob_gzhandler($body, $headers);
+  $status = $stat;
 
-	# Run callback if defined. Callback may set additional cookies
-	# printing Set-Cookie header. If callback returns 0, no data
-	# is output by this function (presume callback did it itself).
-	if ($callback) {
-		$callback->($newBody, $newHeaders, $body) or return;
-	}
-	binmode(STDOUT);
-	print $newHeaders;
-	print "\r\n\r\n"; 
-	print $newBody;
+  # Run callback if defined. Callback may set additional cookies
+  # printing Set-Cookie header. If callback returns 0, no data
+  # is output by this function (presume callback did it itself).
+  if ($callback) {
+    $callback->($newBody, $newHeaders, $body) or return;
+  }
+  binmode(STDOUT);
+  print $newHeaders;
+  print "\r\n\r\n"; 
+  print $newBody;
 }
 
 
@@ -59,43 +59,43 @@ sub flush {
 # Also loads Compress::Zlib and silently returns false if not found.
 # Returns undef if compression ca be used.
 sub getAbility {
-	if (!$ENV{SCRIPT_NAME}) {
-		return "no: not a CGI script";
-	}
-	my $acc = $ENV{HTTP_ACCEPT_ENCODING}||"";
-	if ($acc !~ /\bgzip\b/i) {
-		return "no: incompatible browser";
-	}
-	if (!eval { require Compress::Zlib }) {
-		return "no: Compress::Zlib not found";
-	}
-	return undef;
+  if (!$ENV{SCRIPT_NAME}) {
+    return "no: not a CGI script";
+  }
+  my $acc = $ENV{HTTP_ACCEPT_ENCODING}||"";
+  if ($acc !~ /\bgzip\b/i) {
+    return "no: incompatible browser";
+  }
+  if (!eval { require Compress::Zlib }) {
+    return "no: Compress::Zlib not found";
+  }
+  return undef;
 }
 
 
 # bool isCompressibleType($type)
 # Returns true if MIME type $type is compressible.
 sub isCompressibleType {
-	my ($type) = @_;
-	return $type =~ m{^text/}i;
+  my ($type) = @_;
+  return $type =~ m{^text/}i;
 }
 
 
 # CODE setCallback(CODE $func)
 # Sets the new callback function. Returns previous.
 sub setCallback {
-	my $prev = $callback;
-	$callback = $_[0];
-	return $prev;
+  my $prev = $callback;
+  $callback = $_[0];
+  return $prev;
 }
 
 
 # int setLevel($level)
 # Sets compression level. Returns previous.
 sub setLevel {
-	my $prev = $level;
-	$level = defined $_[0]? $_[0] : 9;
-	return $prev;
+  my $prev = $level;
+  $level = defined $_[0]? $_[0] : 9;
+  return $prev;
 }
 
 
@@ -103,7 +103,7 @@ sub setLevel {
 # Returns status string. If compression is failed, status string is 
 # non-empty and contains diagnostic message. Otherwise it is undef.
 sub getStatus {
-	return $status;
+  return $status;
 }
 
 
@@ -119,73 +119,73 @@ sub getStatus {
 # In $status compression feruse message is returned (or undef if everything is OK).
 # This function can be used exactly as PHP's ob_gzhandler().
 sub ob_gzhandler {
-	my ($body, $h) = @_;
-	$h ||= "";
-	my $status = undef;
+  my ($body, $h) = @_;
+  $h ||= "";
+  my $status = undef;
 
-	# Process all the headers.
-	my $ContentEncoding = undef;
-	my $ContentType = undef;
-	my $Status = undef;
-	my @headers = ();
-	foreach (split /\r?\n/, $h) {
-		if (/^Content[-_]Encoding:\s*(.*)/i) {
-			$ContentEncoding = $1;
-			next;
-		} 
-		if (/^Content[-_]Type:\s*(.*)/i) {
-			$ContentType = $1;
-		}
-		if (/^Status:\s*(\d+)/i) {
-			$Status = $1;
-		}
-		push @headers, $_ if $_;
-	}
-	
-	# Determine if we need to compress.
-	my $needCompress = 1;
-	if (defined $ContentType && !isCompressibleType($ContentType)) {
-		$ContentType ||= "undef";
-		$status = "no: incompatible Content-type ($ContentType)";
-		$needCompress = undef;
-	}
-	if ($Status && $Status ne 200) {
-		$status = "no: Status must be 200 (given $Status)";
-		$needCompress = undef;
-	}
-	if (defined($status=getAbility())) {
-		$needCompress = undef;
-	}
+  # Process all the headers.
+  my $ContentEncoding = undef;
+  my $ContentType = undef;
+  my $Status = undef;
+  my @headers = ();
+  foreach (split /\r?\n/, $h) {
+    if (/^Content[-_]Encoding:\s*(.*)/i) {
+      $ContentEncoding = $1;
+      next;
+    } 
+    if (/^Content[-_]Type:\s*(.*)/i) {
+      $ContentType = $1;
+    }
+    if (/^Status:\s*(\d+)/i) {
+      $Status = $1;
+    }
+    push @headers, $_ if $_;
+  }
+  
+  # Determine if we need to compress.
+  my $needCompress = 1;
+  if (defined $ContentType && !isCompressibleType($ContentType)) {
+    $ContentType ||= "undef";
+    $status = "no: incompatible Content-type ($ContentType)";
+    $needCompress = undef;
+  }
+  if ($Status && $Status ne 200) {
+    $status = "no: Status must be 200 (given $Status)";
+    $needCompress = undef;
+  }
+  if (defined($status=getAbility())) {
+    $needCompress = undef;
+  }
 
-	# Echo compression header.
-	if ($needCompress) {
-		$ContentEncoding = "gzip" . ($ContentEncoding? ", $ContentEncoding" : "")
-			if !$ContentEncoding || $ContentEncoding !~ /\bgzip\b/i;
-		push @headers, "Content-Encoding: $ContentEncoding";
-		push @headers, "Vary: Accept-Encoding";
-	}
+  # Echo compression header.
+  if ($needCompress) {
+    $ContentEncoding = "gzip" . ($ContentEncoding? ", $ContentEncoding" : "")
+      if !$ContentEncoding || $ContentEncoding !~ /\bgzip\b/i;
+    push @headers, "Content-Encoding: $ContentEncoding";
+    push @headers, "Vary: Accept-Encoding";
+  }
 
-	# Compress output.
-	my $headers = join "\r\n", @headers;
-	my $out = $needCompress? deflate_gzip($body, $level) : $body;
+  # Compress output.
+  my $headers = join "\r\n", @headers;
+  my $out = $needCompress? deflate_gzip($body, $level) : $body;
 
-	return wantarray? ($out, $headers, $status) : $out;
+  return wantarray? ($out, $headers, $status) : $out;
 }
 
 
 # string deflate_gzip($text, $level);
 # Compresses the input string and returns result.
 sub deflate_gzip {
-	my ($d, $st) = Compress::Zlib::deflateInit(-Level => defined $_[1]? $_[1] : 9);
-	my ($out, $Status) = $d->deflate($_[0]);
-	my ($outF, $StatusF) = $d->flush();
-	$out = $out.$outF;
+  my ($d, $st) = Compress::Zlib::deflateInit(-Level => defined $_[1]? $_[1] : 9);
+  my ($out, $Status) = $d->deflate($_[0]);
+  my ($outF, $StatusF) = $d->flush();
+  $out = $out.$outF;
 
-	# Shamanian code - without them nothing works! Hmmm...
-	my $pre = pack('cccccccc', 0x1f,0x8b,0x08,0x00,0x00,0x00,0x00,0x00);
-	$out = $pre . substr($out, 0, -4) . pack('V', Compress::Zlib::crc32($_[0])) . pack('V', length($_[0]));
+  # Shamanian code - without them nothing works! Hmmm...
+  my $pre = pack('cccccccc', 0x1f,0x8b,0x08,0x00,0x00,0x00,0x00,0x00);
+  $out = $pre . substr($out, 0, -4) . pack('V', Compress::Zlib::crc32($_[0])) . pack('V', length($_[0]));
 
-	return $out;
+  return $out;
 }
 
 
@@ -199,18 +199,18 @@ my $capture = undef;
 
 # Starts STDOUT capturing.
 sub startCapture {
-	# Tie STDOUT only once.
-	return if $capture;
-	$capture = tie *STDOUT, "CGI::WebGzip::Tie";
+  # Tie STDOUT only once.
+  return if $capture;
+  $capture = tie *STDOUT, "CGI::WebGzip::Tie";
 }
 
 # Finishes STDOUT capturing.
 sub stopCapture {
-	return undef if !$capture;
-	my $obj = tied *STDOUT;
-	my $data = join "", @$obj;
-	untie(*STDOUT);
-	return $data;
+  return undef if !$capture;
+  my $obj = tied *STDOUT;
+  my $data = join "", @$obj;
+  untie(*STDOUT);
+  return $data;
 }
 
 # Package to tie STOUT. Captures all the output.
@@ -350,7 +350,7 @@ error messages are generated.
 
 =head1 AUTHOR
 
-Dmitry Koteroff <koteroff@cpan.org>
+Dmitry Koterov <koterov at cpan dot org>
 
 
 =head1 SEE ALSO
