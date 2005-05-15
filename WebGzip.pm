@@ -1,5 +1,5 @@
 package CGI::WebGzip;
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 use strict;
 
 # Compression level.
@@ -38,8 +38,13 @@ sub flush {
   my ($headers, $body) = split /\r?\n\r?\n/, $data, 2;
   
   # Run compression.
-  my ($newBody, $newHeaders, $stat) = ob_gzhandler($body, $headers);
-  $status = $stat;
+  my ($newBody, $newHeaders, $stat);
+  if (length($body) == 0) {
+    ($newBody, $newHeaders) = ($body, $headers);
+  } else {
+    ($newBody, $newHeaders, $stat) = ob_gzhandler($body, $headers);
+    $status = $stat;
+  }
 
   # Run callback if defined. Callback may set additional cookies
   # printing Set-Cookie header. If callback returns 0, no data
@@ -116,7 +121,7 @@ sub getStatus {
 # Returns compressed data (additionally analysing headers, if present).
 # In scalar context returns $compressedBody only.
 # Input headers can be modified, thus this function returns $modifiedHeaders.
-# In $status compression feruse message is returned (or undef if everything is OK).
+# Compression error message is returned in $status (or undef if everything is OK).
 # This function can be used exactly as PHP's ob_gzhandler().
 sub ob_gzhandler {
   my ($body, $h) = @_;
@@ -319,7 +324,7 @@ Usable in FastCGI environment together with manual C<import()> call
 
 =item bool getAbility()
 
-Returns undef if browser we are in CGI mode, browser supports compression 
+Returns undef if we are in CGI mode, browser supports compression 
 and Compress::Zlib is found. Otherwise returns non-empty diagnostic message.
 
 =item bool isCompressibleType($type)
