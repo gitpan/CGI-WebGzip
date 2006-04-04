@@ -187,7 +187,7 @@ sub deflate_gzip {
   $out = $out.$outF;
 
   # Shamanian code - without them nothing works! Hmmm...
-  my $pre = pack('cccccccc', 0x1f,0x8b,0x08,0x00,0x00,0x00,0x00,0x00);
+  my $pre = pack('CCCCCCCC', 0x1f,0x8b,0x08,0x00,0x00,0x00,0x00,0x00);
   $out = $pre . substr($out, 0, -4) . pack('V', Compress::Zlib::crc32($_[0])) . pack('V', length($_[0]));
 
   return $out;
